@@ -10,7 +10,6 @@ package util;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.lang.Math;
 
 public class Heuristic {
     private State st;
@@ -20,7 +19,7 @@ public class Heuristic {
     public ArrayList<diikstra_ver> d_list;
 
 
-    public  Heuristic(State st){
+    public Heuristic(State st) {
         this.st = st;
         this.G = st.getGraph();
 //		this.s = st.get_A_loc();
@@ -29,19 +28,19 @@ public class Heuristic {
         this.d_list = (this.d).get_all_d(this.s, this.G);
     }
 
-    public double h(){
+    public double h() {
         double val = 0;
         Iterator<diikstra_ver> it = d_list.iterator();
-        while(it.hasNext()){
+        while (it.hasNext()) {
             diikstra_ver v = it.next();
-            if(G.getVertex(v.get_index()-1).hasChems()){
+            if (G.getVertex(v.get_index() - 1).hasChems()) {
                 val += v.get_dis();
             }
         }
         return val;
     }
 
-    public double get_h_value(Vertex t){
+    public double get_h_value(Vertex t) {
         ArrayList<Vertex> chems = G.getChemV();
         double ans = 0;
         double t_dis = (this.d).get_t_dis_in_dList(d_list, t.getIndex());
@@ -51,13 +50,13 @@ public class Heuristic {
         double v_dis;
         double dis;
 
-        for (int i=0; i<chems.size(); i++){
+        for (int i = 0; i < chems.size(); i++) {
             // get the index of the vertex in chem ver
             v_c_index = (chems.get(i)).getIndex();
             // get the index of him in d_list
             v_index = (this.d).getIndexInList(this.d_list, v_c_index);
             // get his distance
-            v_dis = ( (this.d_list).get(v_index) ).get_dis();
+            v_dis = ((this.d_list).get(v_index)).get_dis();
             // compute the distance between t and chems.get(i):
             dis = Math.abs(t_dis - v_dis);
             // inc the ans
@@ -68,7 +67,7 @@ public class Heuristic {
 
     }
 
-    public double get_f_value(Double H_value){
+    public double get_f_value(Double H_value) {
         double ans = 0;
 
         ArrayList<Vertex> chems = G.getChemV();
@@ -77,13 +76,13 @@ public class Heuristic {
         int v_index;
         double v_dis;
 
-        for (int i=0; i<chems.size(); i++){
+        for (int i = 0; i < chems.size(); i++) {
             // get the index of the vertex in chem ver
             v_c_index = (chems.get(i)).getIndex();
             // get the index of him in d_list
             v_index = (this.d).getIndexInList(this.d_list, v_c_index);
             // get his distance
-            v_dis = ( (this.d_list).get(v_index) ).get_dis();
+            v_dis = ((this.d_list).get(v_index)).get_dis();
             // we already know that d[s] = 0
             // therefore we only accumulate the d[v]
             ans = ans + v_dis;
@@ -92,7 +91,7 @@ public class Heuristic {
     }
 
     // return the dis between s and t
-    public double get_dis(Vertex s, Vertex t){
+    public double get_dis(Vertex s, Vertex t) {
         int s_index = this.d.getIndexInList(this.d_list, s.getIndex());
         int t_index = this.d.getIndexInList(this.d_list, t.getIndex());
         double s_dis = ((this.d_list).get(s_index)).get_dis();
@@ -102,9 +101,8 @@ public class Heuristic {
     }
 
     public double g() {
-        return st.getAgent().getScore();
+        return st.getAgent().getCost();
     }
-
 
 
 }

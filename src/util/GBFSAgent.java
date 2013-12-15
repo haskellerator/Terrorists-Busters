@@ -19,43 +19,41 @@ public class GBFSAgent extends Agent { //  greedy BFS agent
 
 
     //copy constuctor
-    public GBFSAgent(GBFSAgent other, Graph g){
-        super(other,g);
+    public GBFSAgent(GBFSAgent other, Graph g) {
+        super(other, g);
         expansionSteps = other.getES();
         weightFactor = other.getWF();
         totalSteps = other.getTS();
-
     }
 
     public GBFSAgent(int serN, char t, Vertex initial, Vertex goal,
-                     ArrayList<Action> actions,int wf) {
+                     ArrayList<Action> actions, int wf) {
         super(serN, t, initial, goal, actions);
         expansionSteps = 0;
         weightFactor = wf;
         totalSteps = 0;
-
     }
 
     @Override
     public void decide(Graph g) throws IOException {
-        State ans = greedyBFS(g);
+        NormalState ans = greedyBFS(g);
         Vertex anl = ans.getAgent().getLocation(), //agent next location
                 parallel = g.retDupVertex(anl); // the parallel on this world
-        Edge e = g.getEdge(location,parallel);  // getting the edge
+        Edge e = g.getEdge(location, parallel);  // getting the edge
 
-        int actionToDo = ans.getAction();		// action as specified in state class
-        boolean tkch = false,tkes = false;
-        if(actionToDo == -1){ 				  // noop
+        int actionToDo = ans.getAction();        // action as specified in state class
+        boolean tkch = false, tkes = false;
+        if (actionToDo == -1) {                  // noop
             actions.get(0).action(this, null, false, false, true);
             totalSteps += expansionSteps;
             expansionSteps = 0;
             return;
         }
-        if(actionToDo == 2 || actionToDo == 3){
+        if (actionToDo == 2 || actionToDo == 3) {
             tkch = true;
         }
 
-        if(actionToDo == 1 || actionToDo == 3){ //
+        if (actionToDo == 1 || actionToDo == 3) { //
             tkes = true;
         }
         // drive with flags
@@ -66,47 +64,47 @@ public class GBFSAgent extends Agent { //  greedy BFS agent
     }
 
     /* this will be the algorithm for the greedy heuristic best first search */
-    private State greedyBFS(Graph g) throws IOException {
-        State s = new State(g, this),s2; // initial
-        while(s.getValue() != 0 || (!s.isGoalState())){
-            ArrayList<State> children = s.expand(null,1); // return legal children children
+    private NormalState greedyBFS(Graph g) throws IOException {
+        NormalState s = new NormalState(g, this), s2; // initial
+        while (s.getValue() != 0 || (!s.isGoalState())) {
+            ArrayList<NormalState> children = s.expand(null, 1); // return legal children children
 
-            if(children.size() == 0){
+            if (children.size() == 0) {
                 System.out.println("~~~ Agent is in a loop, all possible children were generated earlier");
                 printDecision(s.getAncestors());
                 System.exit(0);
             }
 
-            expansionSteps +=1;
-            setValues(children);		// set values to children
-            s2 = chooseChild(children);	// chooses the child with the mininmal heuristic value
+            expansionSteps += 1;
+            setValues(children);        // set values to children
+            s2 = chooseChild(children);    // chooses the child with the mininmal heuristic value
             s2.getAncestors().add(s);
             s = s2;
         }
-        s.getAncestors().add(s); 	                             	// adds the leaf state to the ancestors
+        s.getAncestors().add(s);                                    // adds the leaf state to the ancestors
         printDecision(s.getAncestors());
         return s.getAncestors().get(1);
     }
 
 
     // prints the decision made in the end
-    private void printDecision(ArrayList<State> sarr) {
-        Iterator<State> it = sarr.iterator();
-        while(it.hasNext()){
-            State s = it.next();
-            System.out.println(" -------------------------" );
-            System.out.println(s.getAgent().getLocation().toString() + '\n' + " hv : " + s.getValue() +" isGoal? " + s.isGoalState());
-            System.out.println(" -------------------------" );
+    private void printDecision(ArrayList<NormalState> sarr) {
+        Iterator<NormalState> it = sarr.iterator();
+        while (it.hasNext()) {
+            NormalState s = it.next();
+            System.out.println(" -------------------------");
+            System.out.println(s.getAgent().getLocation().toString() + '\n' + " hv : " + s.getValue() + " isGoal? " + s.isGoalState());
+            System.out.println(" -------------------------");
         }
     }
 
     // picks the best child
-    private State chooseChild(ArrayList<State> children) {
-        Iterator<State> it = children.iterator();
-        State ret = it.next(),other;
-        while(it.hasNext()){
+    private NormalState chooseChild(ArrayList<NormalState> children) {
+        Iterator<NormalState> it = children.iterator();
+        NormalState ret = it.next(), other;
+        while (it.hasNext()) {
             other = it.next();
-            if(other.getValue() < ret.getValue()){
+            if (other.getValue() < ret.getValue()) {
                 ret = other;
             }
         }
@@ -114,29 +112,30 @@ public class GBFSAgent extends Agent { //  greedy BFS agent
     }
 
     /* this function sets the values of all the children according to the heuristic*/
-    private void setValues(ArrayList<State> children) {
-        Iterator<State> it = children.iterator();
-        while(it.hasNext()){
-            State s = it.next();
+    private void setValues(ArrayList<NormalState> children) {
+        Iterator<NormalState> it = children.iterator();
+        while (it.hasNext()) {
+            NormalState s = it.next();
             Heuristic h = new Heuristic(s);
             s.setValue(h.get_h_value(s.getAgent().getGoal())/* heurist function here */);
         }
     }
 
     @Override
-    public String toString(){
-        String s = ">>> Agent "+ serialNum +" " + super.type + " : location = " + super.location.getIndex() + " , carry chems = "+super.chemicals +" , has escort = " + super.escort +
-                " , score = " + super.score + " , actions made = " + super.actionsMade + ", expansions this turn = "+ expansionSteps + ", total expansions = " + totalSteps ;
+    public String toString() {
+        String s = ">>> Agent " + serialNum + " " + super.type + " : location = " + super.location.getIndex() + " , carry chems = " + super.chemicals + " , has escort = " + super.escort +
+                " , cost = " + super.cost + " , actions made = " + super.actionsMade + ", expansions this turn = " + expansionSteps + ", total expansions = " + totalSteps;
         return s;
     }
 
-    public double getPreformance(){
-        return ((getScore() * weightFactor) + totalSteps);
+    public double getPreformance() {
+        return ((getCost() * weightFactor) + totalSteps);
     }
 
     public int getSteps() {
         return totalSteps;
     }
+
     public int getTS() {
         return totalSteps;
     }

@@ -18,44 +18,43 @@ public abstract class Agent {
     protected boolean escort;
     protected Vertex location;
     protected Vertex goal;
-    protected double score;
+    protected double cost;
     protected int actionsMade;
     protected ArrayList<Action> actions;
     protected boolean isDemi;
     protected boolean nextAction;
     protected Vertex initialLoc; // for the a star algorithms
+    protected double reward;
 
     // copy constructor for the states
-    public Agent(Agent other,Graph g){
+    public Agent(Agent other, Graph g) {
         this.serialNum = other.getSerial();
         this.type = other.getType();
-        this.chemicals = other.hasChems();
-        this.escort = other.hasEscort();
         this.location = g.retDupVertex(other.getLocation());
-        this.goal =g.retDupVertex( other.getGoal());
-        this.score = other.getScore();
+        this.goal = g.retDupVertex(other.getGoal());
+        this.cost = other.getCost();
         this.actionsMade = other.getActionsMade();
         this.actions = other.getActions();
-        this. isDemi = true;
+        this.isDemi = true;
         this.nextAction = true;
         this.initialLoc = g.retDupVertex(other.getInitialLoc());
+        this.reward = other.getReward();
     }
 
-
-
-    public Agent( int serN,char t,Vertex initial, Vertex goal, ArrayList<Action> actions){
+    public Agent(int serN, char t, Vertex initial, Vertex goal, ArrayList<Action> actions) {
         serialNum = serN;
         type = t;
         chemicals = false;
         escort = false;
         location = initial;
         this.goal = goal;
-        score = 0;
+        cost = 0;
         actionsMade = 0;
         this.actions = actions;
         isDemi = false;
         this.nextAction = true;
         this.initialLoc = location;
+        this.reward = 0;
         System.out.println("~~~ Agent " + serialNum + " of type -" + t + "- is ready for action in region " + location.getIndex() + " with goal in " + goal.getIndex() + ", sir!");
     }
 
@@ -65,30 +64,30 @@ public abstract class Agent {
     //	    Setters and Getters       //
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
     @Override
-    public String toString(){
-        String s = ">>> Agent "+ serialNum +" " + type + " : location = " + location.getIndex() + " , carry chems = "+chemicals +" , has escort = " + escort +
-                " , score = " + score + " , actions made = " + actionsMade;
+    public String toString() {
+        String s = ">>> Agent " + serialNum + " " + type + " : location = " + location.getIndex() + " , carry chems = " + chemicals + " , has escort = " + escort +
+                " , cost = " + cost + " , actions made = " + actionsMade;
         return s;
     }
 
-    public Vertex getLocation(){
+    public Vertex getLocation() {
         return location;
     }
 
-    public boolean hasChems(){
+    public boolean hasChems() {
         return chemicals;
     }
 
-    public boolean hasEscort(){
+    public boolean hasEscort() {
         return escort;
     }
 
-    public double getScore(){
-        return score;
+    public double getCost() {
+        return cost;
     }
 
     public void AddCost(double hellCost) {
-        this.score += hellCost;
+        this.cost += hellCost;
 
     }
 
@@ -105,12 +104,12 @@ public abstract class Agent {
         return location == goal;
     }
 
-    public int getActionsMade(){
+    public int getActionsMade() {
         return actionsMade;
     }
 
-    public void IncActionsCount(){
-        actionsMade +=1;
+    public void IncActionsCount() {
+        actionsMade += 1;
     }
 
     public char getType() {
@@ -125,10 +124,9 @@ public abstract class Agent {
         return actions;
     }
 
-    public void setEscort(boolean val){
+    public void setEscort(boolean val) {
         escort = val;
     }
-
 
 
     public void pickupChems(boolean val) {
@@ -136,35 +134,42 @@ public abstract class Agent {
     }
 
 
-
-    public static Agent dupAgent(Agent a, Graph g){
-        if(a.getType() == 'b'){
+    public static Agent dupAgent(Agent a, Graph g) {
+        if (a.getType() == 'b') {
             return dupGBFSAgent(a, g);
-        } else if(a.getType() == 'a'){
-            return dupASAgent(a, g);
-        } else if(a.getType() == 'r'){
+        } else if (a.getType() == 'a') {
+            if (a instanceof ASAgent)
+                return dupASAgent(a, g);
+            else
+                return dupAdversarialAgent(a, g);
+        } else if (a.getType() == 'r') {
             return dupRTASAgent(a, g);
+        } else if (a.getType() == 'h') {
+            return dupHumanAgent(a, g);
+        } else {
+            System.out.println("~~~ agent " + a.getType() + " is not supported here");
+            return null;
         }
-        System.out.println("~~~ agent " + a.getType() + " is not supported here" );
-        return null;
     }
 
-
+    private static HumanAgent dupHumanAgent(Agent a, Graph g) {
+        return new HumanAgent((HumanAgent) a, g);
+    }
 
     private static RTASAgent dupRTASAgent(Agent a, Graph g) {
-        return new RTASAgent((RTASAgent)a,g);
+        return new RTASAgent((RTASAgent) a, g);
     }
-
-
 
     private static ASAgent dupASAgent(Agent a, Graph g) {
-        return new ASAgent((ASAgent)a,g);
+        return new ASAgent((ASAgent) a, g);
     }
 
-
+    private static AdversarialAgent dupAdversarialAgent(Agent a, Graph g) {
+        return new AdversarialAgent((AdversarialAgent) a, g);
+    }
 
     private static GBFSAgent dupGBFSAgent(Agent a, Graph g) {
-        return new GBFSAgent((GBFSAgent)a, g);
+        return new GBFSAgent((GBFSAgent) a, g);
     }
 
 
@@ -178,21 +183,20 @@ public abstract class Agent {
 
 
     @Override
-    public boolean equals(Object obj){
+    public boolean equals(Object obj) {
 
-        if(this == obj) return true;
+        if (this == obj) return true;
 
-        else if(!(obj instanceof Agent)) return false;
+        else if (!(obj instanceof Agent)) return false;
 
-        return ((Agent)obj).getLocation().equals(this.location);
+        return ((Agent) obj).getLocation().equals(this.location);
 
     }
 
 
-    public int getGoal_index(){
+    public int getGoal_index() {
         return (this.goal).getIndex();
     }
-
 
 
     public Vertex getInitialLoc() {
@@ -200,9 +204,15 @@ public abstract class Agent {
     }
 
 
-
     public void setInitialLoc(Vertex initialLoc) {
         this.initialLoc = initialLoc;
     }
 
+    public double getReward() {
+        return reward;
+    }
+
+    public void setReward(double reward) {
+        this.reward = reward;
+    }
 }

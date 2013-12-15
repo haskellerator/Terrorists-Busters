@@ -1,5 +1,7 @@
 package util;
 
+import java.util.ArrayList;
+
 /**
  * Created with IntelliJ IDEA.
  * User: talz
@@ -9,6 +11,13 @@ package util;
  */
 
 public interface Action {
-    public int action(Agent a,Edge e, boolean tc, boolean te, boolean real);
-    public double getCost(Agent a, Edge e ,boolean tkch, boolean tkes );
+    public int action(Agent a, Edge e, boolean tc, boolean te, boolean real);
+
+    public double getCost(Agent a, Edge e, boolean tkch, boolean tkes);
+
+    public void setReward(double reward);
+
+    public void setAgents(ArrayList<Agent> agents);
+
+    public void setGameType(int gt);
 }

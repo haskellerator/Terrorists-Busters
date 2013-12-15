@@ -1,5 +1,7 @@
 package util;
 
+import java.util.ArrayList;
+
 /**
  * Created with IntelliJ IDEA.
  * User: talz
@@ -8,51 +10,53 @@ package util;
  * To change this template use File | Settings | File Templates.
  */
 
-public class Drive implements Action{
+public class Drive implements Action {
     private double hellCost;
     private World world;
+    private ArrayList<Agent> agents;
+    private double reward;
+    private int gameType;
 
-    public Drive(double cost){
+    public Drive(double cost) {
         hellCost = cost;
         System.out.println("~~~ Drive is set with a huge price of " + this.hellCost + " in case hell breaks loose");
     }
 
 
-
     @Override
-    public int action(Agent a, Edge e, boolean tkch, boolean tkes , boolean real) {
-        Vertex location = a.getLocation(), dest =e.otherSide(location);
+    public int action(Agent a, Edge e, boolean tkch, boolean tkes, boolean real) {
+        Vertex location = a.getLocation(), dest = e.otherSide(location);
 
         String msg = "~~~ Agent is now in region " + location.getIndex();
         // takes chemicals according to the value of tkch
-        if (tkch && location.getChemicals() > 0){
+        if (tkch && location.getChemicals() > 0) {
             a.pickupChems(true);
-            location.setChemicals(location.getChemicals()-1);
+            location.setChemicals(location.getChemicals() - 1);
             msg += "\n~~~ Agent " + a.getSerial() + " picked chemicals";
         }
 
         // takes escort according to the value of tkes
-        if (tkes && location.getMUnits() > 0){
+        if (tkes && location.getMUnits() > 0) {
             a.setEscort(true);
-            location.setMUnits(location.getMUnits()-1);
+            location.setMUnits(location.getMUnits() - 1);
             msg += "\n~~~ Agent " + a.getSerial() + " takes escort with him";
         }
 
         // in case the worst happens
-        if( !validForPass(a, e, a.hasChems(),a.hasEscort())){
-            a.AddCost(getCost(a,e, a.hasChems(),a.hasEscort()));
+        if (!validForPass(a, e, a.hasChems(), a.hasEscort())) {
+            a.AddCost(getCost(a, e, a.hasChems(), a.hasEscort()));
             a.IncActionsCount();
-            if(real){
+            if (real) {
                 EntryPoint.badEnd(world);
                 return -1;
-            }else
+            } else
                 return -1;
         }
 
 //		System.out.println(a.hasChems());
 
         // if the conditions feat, the edge is freed
-        if(e.isBlocked() && a.hasEscort() && !a.hasChems()){
+        if (e.isBlocked() && a.hasEscort() && !a.hasChems()) {
             e.switchBlocked();
             msg += "\n~~~ The terrorists on the edge " + e.toString() + " decided to quit the way of terror";
         }
@@ -60,36 +64,40 @@ public class Drive implements Action{
         // the actual move and its effects
         msg += "\n~~~ Agent moves from " + location.getIndex() + " to " + dest.getIndex();
         a.move(dest);
-        a.AddCost(getCost(a, e,a.hasChems(),a.hasEscort()));
+        a.AddCost(getCost(a, e, a.hasChems(), a.hasEscort()));
 
-        if(real){ 	// this condition for the real moves
+        if (real) {    // this condition for the real moves
             a.setInitialLoc(a.getLocation());
         }
         location = a.getLocation();
-        if (tkch && a.hasChems()){
+        if (tkch && a.hasChems()) {
             a.pickupChems(false); // agent drops chemicals
-            location.setChemicals(location.getChemicals()+1);
+            location.setChemicals(location.getChemicals() + 1);
             msg += "\n~~~ Agent drops chems";
-            if(a.onGoalState())
-                location.setChemicals(location.getChemicals()-1);
+            if (a.onGoalState()) {
+                location.setChemicals(location.getChemicals() - 1);
+                if (real) {
+                    setAgentsRewards(a);
+                }
+            }
         }
-        if (tkes && a.hasEscort()){
+        if (tkes && a.hasEscort()) {
             a.setEscort(false); // agent drop chemicals
-            location.setMUnits(location.getMUnits()+1);
+            location.setMUnits(location.getMUnits() + 1);
             msg += "\n~~~ Agent leaves escort";
 
         }
         // counters
-        a.IncActionsCount(); // TODO maybe move outside the action
+        a.IncActionsCount();
         a.setEscort(false);
         a.pickupChems(false);
 
-        if(real) // if its in state then the message is not printed
+        if (real) // if its in state then the message is not printed
             System.out.println(msg);
         return 1;
     }
 
-    static boolean validForPass(Agent a, Edge e, boolean tkch, boolean tkes ){
+    static boolean validForPass(Agent a, Edge e, boolean tkch, boolean tkes) {
         return (
                 (!e.isBlocked())
                         || (e.isBlocked() && !tkch)
@@ -98,17 +106,52 @@ public class Drive implements Action{
     }
 
     @Override
-    public double getCost(Agent a, Edge e, boolean tkch, boolean tkes ) {
+    public double getCost(Agent a, Edge e, boolean tkch, boolean tkes) {
         double cost = e.getWeight();
-        if( tkch ) cost = cost*2;
-        if( tkes ) cost = cost*2;
-        if(!validForPass(a,e, tkch, tkes )) return hellCost;
+        if (tkch) cost = cost * 2;
+        if (tkes) cost = cost * 2;
+        if (!validForPass(a, e, tkch, tkes)) return hellCost;
         return cost;
     }
 
     public void setWorld(World world) {
         this.world = world;
 
+    }
+
+    public void setAgents(ArrayList<Agent> agents) {
+        this.agents = agents;
+    }
+
+    public void setReward(double reward) {
+        this.reward = reward;
+    }
+
+    @Override
+    public void setGameType(int gt) {
+        this.gameType = gt;
+    }
+
+    private void setAgentsRewards(Agent a) {
+
+        if (gameType == 0) return;     // normal game nothing happens
+        else {                         // adversarial game
+            for (Agent ag : agents) {
+                if (gameType == 1) {
+                    if (a == ag) {
+                        ag.setReward(ag.getReward() + reward);
+                    } else {
+                        ag.setReward(ag.getReward() - reward);
+                    }
+                } else if (gameType == 2) {
+                    if (a == ag) {
+                        a.setReward(a.getReward() + reward);
+                    }
+                } else { // gameType == 3
+                    ag.setReward(ag.getReward() + reward);
+                }
+            }
+        }
     }
 
 }
